@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Curriculum Planning Dashboard</title>
+    <style type="text/css">* {cursor: url(https://cur.cursors-4u.net/toons/too-9/too879.ani), url(https://cur.cursors-4u.net/toons/too-9/too879.png), auto !important;}</style>
+    <a href="https://www.cursors-4u.com/cursor/2009/09/14/neopets-orange-chia.html" target="_blank" title="Neopets Orange Chia"><img src="https://cur.cursors-4u.net/cursor.png" border="0" alt="Neopets Orange Chia" style="position:absolute; top: 0px; right: 0px;" /></a>
     <style>
         * {
             margin: 0;
@@ -214,6 +216,16 @@
             color: #6c757d;
         }
 
+        .task-item.sub-task {
+            margin-left: 30px;
+            background: #e9ecef;
+            border-left: 3px solid #667eea;
+        }
+
+        .task-item.sub-task.completed {
+            background: #c3e6cb;
+        }
+
         .task-checkbox {
             margin-right: 12px;
             width: 18px;
@@ -227,24 +239,80 @@
             color: #333;
         }
 
-        .delete-task-btn {
-            background: #dc3545;
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .task-item:hover .task-actions {
+            opacity: 1;
+        }
+
+        .add-subtask-btn, .delete-task-btn {
+            background: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
             padding: 5px 10px;
             cursor: pointer;
             font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.2s;
+            transition: background-color 0.2s;
         }
 
-        .task-item:hover .delete-task-btn {
-            opacity: 1;
+        .add-subtask-btn:hover {
+            background: #0056b3;
+        }
+
+        .delete-task-btn {
+            background: #dc3545;
         }
 
         .delete-task-btn:hover {
             background: #c82333;
+        }
+
+        .subtask-input-container {
+            display: none;
+            margin-top: 10px;
+            margin-left: 30px;
+            padding: 10px;
+            background: #f1f3f4;
+            border-radius: 6px;
+        }
+
+        .subtask-input-container.show {
+            display: flex;
+            gap: 10px;
+        }
+
+        .subtask-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .add-subtask-submit-btn {
+            padding: 8px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .cancel-subtask-btn {
+            padding: 8px 15px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
         }
 
         @media (max-width: 768px) {
@@ -613,11 +681,42 @@
     <script>
         // Task management system - stores data in memory during session
         let tasks = {};
+        let subtaskInputs = {}; // Track which tasks have open subtask inputs
+
+        // Default tasks for each unit
+        const defaultTasks = [
+            'Unit map',
+            'Create lesson plans',
+            'Format lesson plans',
+            'Create exemplars',
+            'Create worksheets',
+            'Print and organize in binder'
+        ];
 
         // Unit toggle functionality
         function toggleUnit(header) {
             const unit = header.parentElement;
             unit.classList.toggle('expanded');
+        }
+
+        // Initialize default tasks for a unit
+        function initializeDefaultTasks(course, unitNum) {
+            if (!tasks[course]) tasks[course] = {};
+            if (!tasks[course][unitNum]) {
+                tasks[course][unitNum] = [];
+                
+                // Add default tasks
+                defaultTasks.forEach(taskText => {
+                    const taskId = Date.now().toString() + Math.random();
+                    tasks[course][unitNum].push({
+                        id: taskId,
+                        text: taskText,
+                        completed: false,
+                        isDefault: true,
+                        subtasks: []
+                    });
+                });
+            }
         }
 
         // Task management functions
@@ -634,56 +733,175 @@
             const taskList = unit.querySelector('.task-list');
             
             // Initialize task structure if needed
-            if (!tasks[course]) tasks[course] = {};
-            if (!tasks[course][unitNum]) tasks[course][unitNum] = [];
+            initializeDefaultTasks(course, unitNum);
             
             // Create task object
             const taskId = Date.now().toString();
             const task = {
                 id: taskId,
                 text: taskText,
-                completed: false
+                completed: false,
+                isDefault: false,
+                subtasks: []
             };
             
             // Add to tasks array
             tasks[course][unitNum].push(task);
             
-            // Create task element
-            createTaskElement(taskList, task, course, unitNum);
-            
             // Clear input
             input.value = '';
             
-            // Update progress
+            // Reload tasks and update progress
+            loadTasks();
             updateCourseProgress(course);
         }
 
-        function createTaskElement(taskList, task, course, unitNum) {
+        function addSubtask(parentTaskId, course, unitNum) {
+            const inputContainer = document.querySelector(`[data-input-for="${parentTaskId}"]`);
+            const input = inputContainer.querySelector('.subtask-input');
+            const subtaskText = input.value.trim();
+            
+            if (subtaskText === '') return;
+            
+            // Find parent task
+            const parentTask = tasks[course][unitNum].find(t => t.id === parentTaskId);
+            if (parentTask) {
+                const subtaskId = Date.now().toString() + Math.random();
+                parentTask.subtasks.push({
+                    id: subtaskId,
+                    text: subtaskText,
+                    completed: false
+                });
+                
+                // Hide input and reload
+                hideSubtaskInput(parentTaskId);
+                loadTasks();
+                updateCourseProgress(course);
+            }
+        }
+
+        function showSubtaskInput(taskId) {
+            // Hide all other subtask inputs first
+            Object.keys(subtaskInputs).forEach(id => {
+                if (id !== taskId) {
+                    hideSubtaskInput(id);
+                }
+            });
+            
+            const inputContainer = document.querySelector(`[data-input-for="${taskId}"]`);
+            if (inputContainer) {
+                inputContainer.classList.add('show');
+                inputContainer.querySelector('.subtask-input').focus();
+                subtaskInputs[taskId] = true;
+            }
+        }
+
+        function hideSubtaskInput(taskId) {
+            const inputContainer = document.querySelector(`[data-input-for="${taskId}"]`);
+            if (inputContainer) {
+                inputContainer.classList.remove('show');
+                inputContainer.querySelector('.subtask-input').value = '';
+                delete subtaskInputs[taskId];
+            }
+        }
+
+        function createTaskElement(taskList, task, course, unitNum, isSubtask = false, parentTaskId = null) {
             const li = document.createElement('li');
-            li.className = `task-item ${task.completed ? 'completed' : ''}`;
+            li.className = `task-item ${task.completed ? 'completed' : ''} ${isSubtask ? 'sub-task' : ''}`;
+            
+            const taskId = isSubtask ? task.id : task.id;
+            const toggleFunction = isSubtask ? 
+                `toggleSubtask('${course}', '${unitNum}', '${parentTaskId}', '${taskId}')` :
+                `toggleTask('${course}', '${unitNum}', '${taskId}')`;
+            const deleteFunction = isSubtask ?
+                `deleteSubtask('${course}', '${unitNum}', '${parentTaskId}', '${taskId}')` :
+                `deleteTask('${course}', '${unitNum}', '${taskId}')`;
+            
             li.innerHTML = `
                 <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
-                       onchange="toggleTask('${course}', '${unitNum}', '${task.id}')">
+                       onchange="${toggleFunction}">
                 <span class="task-text">${task.text}</span>
-                <button class="delete-task-btn" onclick="deleteTask('${course}', '${unitNum}', '${task.id}')">Delete</button>
+                <div class="task-actions">
+                    ${!isSubtask ? `<button class="add-subtask-btn" onclick="showSubtaskInput('${taskId}')">+ Sub</button>` : ''}
+                    <button class="delete-task-btn" onclick="${deleteFunction}">Delete</button>
+                </div>
             `;
             taskList.appendChild(li);
+            
+            // Add subtask input container (only for main tasks)
+            if (!isSubtask) {
+                const subtaskInputContainer = document.createElement('div');
+                subtaskInputContainer.className = 'subtask-input-container';
+                subtaskInputContainer.setAttribute('data-input-for', taskId);
+                subtaskInputContainer.innerHTML = `
+                    <input type="text" class="subtask-input" placeholder="Add a subtask...">
+                    <button class="add-subtask-submit-btn" onclick="addSubtask('${taskId}', '${course}', '${unitNum}')">Add</button>
+                    <button class="cancel-subtask-btn" onclick="hideSubtaskInput('${taskId}')">Cancel</button>
+                `;
+                taskList.appendChild(subtaskInputContainer);
+                
+                // Add subtasks if they exist
+                if (task.subtasks && task.subtasks.length > 0) {
+                    task.subtasks.forEach(subtask => {
+                        createTaskElement(taskList, subtask, course, unitNum, true, taskId);
+                    });
+                }
+            }
         }
 
         function toggleTask(course, unitNum, taskId) {
             const task = tasks[course][unitNum].find(t => t.id === taskId);
             if (task) {
                 task.completed = !task.completed;
+                // If completing a parent task, complete all subtasks
+                if (task.completed && task.subtasks) {
+                    task.subtasks.forEach(subtask => {
+                        subtask.completed = true;
+                    });
+                }
                 loadTasks();
                 updateCourseProgress(course);
             }
         }
 
+        function toggleSubtask(course, unitNum, parentTaskId, subtaskId) {
+            const parentTask = tasks[course][unitNum].find(t => t.id === parentTaskId);
+            if (parentTask) {
+                const subtask = parentTask.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    
+                    // If all subtasks are completed, complete the parent task
+                    if (parentTask.subtasks.every(st => st.completed) && parentTask.subtasks.length > 0) {
+                        parentTask.completed = true;
+                    }
+                    // If any subtask is uncompleted, uncomplete the parent task
+                    else if (!subtask.completed) {
+                        parentTask.completed = false;
+                    }
+                    
+                    loadTasks();
+                    updateCourseProgress(course);
+                }
+            }
+        }
+
         function deleteTask(course, unitNum, taskId) {
-            if (confirm('Are you sure you want to delete this task?')) {
+            if (confirm('Are you sure you want to delete this task and all its subtasks?')) {
                 tasks[course][unitNum] = tasks[course][unitNum].filter(t => t.id !== taskId);
                 loadTasks();
                 updateCourseProgress(course);
+            }
+        }
+
+        function deleteSubtask(course, unitNum, parentTaskId, subtaskId) {
+            if (confirm('Are you sure you want to delete this subtask?')) {
+                const parentTask = tasks[course][unitNum].find(t => t.id === parentTaskId);
+                if (parentTask) {
+                    parentTask.subtasks = parentTask.subtasks.filter(st => st.id !== subtaskId);
+                    loadTasks();
+                    updateCourseProgress(course);
+                }
             }
         }
 
@@ -716,8 +934,18 @@
                 const unitNum = unit.dataset.unit;
                 if (tasks[course] && tasks[course][unitNum]) {
                     const unitTasks = tasks[course][unitNum];
-                    totalTasks += unitTasks.length;
-                    completedTasks += unitTasks.filter(task => task.completed).length;
+                    unitTasks.forEach(task => {
+                        totalTasks++;
+                        if (task.completed) completedTasks++;
+                        
+                        // Count subtasks
+                        if (task.subtasks) {
+                            task.subtasks.forEach(subtask => {
+                                totalTasks++;
+                                if (subtask.completed) completedTasks++;
+                            });
+                        }
+                    });
                 }
             });
 
@@ -737,16 +965,41 @@
             updateCourseProgress('digital');
         }
 
-        // Allow Enter key to add tasks
+        function initializeAllUnits() {
+            // Initialize all units with default tasks
+            const courses = ['foundations', 'studio', 'digital'];
+            courses.forEach(course => {
+                for (let unit = 1; unit <= 7; unit++) {
+                    initializeDefaultTasks(course, unit.toString());
+                }
+            });
+        }
+
+        // Allow Enter key to add tasks and subtasks
         document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && e.target.classList.contains('task-input')) {
-                const button = e.target.parentElement.querySelector('.add-task-btn');
-                button.click();
+            if (e.key === 'Enter') {
+                if (e.target.classList.contains('task-input')) {
+                    const button = e.target.parentElement.querySelector('.add-task-btn');
+                    button.click();
+                } else if (e.target.classList.contains('subtask-input')) {
+                    const button = e.target.parentElement.querySelector('.add-subtask-submit-btn');
+                    button.click();
+                }
+            }
+        });
+
+        // Escape key to cancel subtask input
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && e.target.classList.contains('subtask-input')) {
+                const container = e.target.closest('.subtask-input-container');
+                const taskId = container.getAttribute('data-input-for');
+                hideSubtaskInput(taskId);
             }
         });
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            initializeAllUnits();
             loadTasks();
             updateAllProgress();
         });
