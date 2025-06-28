@@ -732,6 +732,9 @@
                 document.getElementById('password').value = '';
             }
         });
+    </script>
+</body>
+</html>
 
         // Logout functionality
         function logout() {
@@ -814,3 +817,73 @@
                 saveTasks();
                 loadTasks();
                 updateCourseProgress(course);
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('curriculumTasks', JSON.stringify(tasks));
+        }
+
+        function loadTasks() {
+            // Clear existing tasks
+            document.querySelectorAll('.task-list').forEach(list => {
+                list.innerHTML = '';
+            });
+
+            // Load tasks from storage
+            for (const course in tasks) {
+                for (const unitNum in tasks[course]) {
+                    const unit = document.querySelector(`[data-course="${course}"][data-unit="${unitNum}"]`);
+                    if (unit) {
+                        const taskList = unit.querySelector('.task-list');
+                        tasks[course][unitNum].forEach(task => {
+                            createTaskElement(taskList, task, course, unitNum);
+                        });
+                    }
+                }
+            }
+        }
+
+        function updateCourseProgress(course) {
+            const courseUnits = document.querySelectorAll(`[data-course="${course}"]`);
+            let totalTasks = 0;
+            let completedTasks = 0;
+
+            courseUnits.forEach(unit => {
+                const unitNum = unit.dataset.unit;
+                if (tasks[course] && tasks[course][unitNum]) {
+                    const unitTasks = tasks[course][unitNum];
+                    totalTasks += unitTasks.length;
+                    completedTasks += unitTasks.filter(task => task.completed).length;
+                }
+            });
+
+            const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            const progressFill = document.getElementById(`${course}-progress`);
+            const progressText = document.getElementById(`${course}-text`);
+
+            if (progressFill && progressText) {
+                progressFill.style.width = progressPercent + '%';
+                progressText.textContent = progressPercent + '%';
+            }
+        }
+
+        function updateAllProgress() {
+            updateCourseProgress('foundations');
+            updateCourseProgress('studio');
+            updateCourseProgress('digital');
+        }
+
+        // Allow Enter key to add tasks
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.classList.contains('task-input')) {
+                const button = e.target.parentElement.querySelector('.add-task-btn');
+                button.click();
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Focus on password input
+            document.getElementById('password').focus();
+        });
