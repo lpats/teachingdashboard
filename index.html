@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curriculum Planning Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .dashboard {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .course-header {
+            padding: 25px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .course-header.foundations {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .course-header.studio {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+
+        .course-header.digital {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .course-header h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .course-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            width: 70%;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .units-container {
+            padding: 25px;
+        }
+
+        .unit {
+            margin-bottom: 25px;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .unit-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e5e9;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .unit-header:hover {
+            background: #e9ecef;
+        }
+
+        .unit-header h3 {
+            color: #333;
+            font-size: 18px;
+        }
+
+        .unit-toggle {
+            font-size: 18px;
+            color: #666;
+            transition: transform 0.3s;
+        }
+
+        .unit.expanded .unit-toggle {
+            transform: rotate(180deg);
+        }
+
+        .unit-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .unit.expanded .unit-content {
+            display: block;
+        }
+
+        .task-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .task-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .task-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .add-task-btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .add-task-btn:hover {
+            background: #218838;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .task-item.completed {
+            background: #d4edda;
+            opacity: 0.7;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .task-checkbox {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .delete-task-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .task-item:hover .delete-task-btn {
+            opacity: 1;
+        }
+
+        .delete-task-btn:hover {
+            background: #c82333;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .course-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <h2>🎨 Curriculum Dashboard</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <button type="submit" class="login-btn">Access Dashboard</button>
+                <div class="error" id="loginError"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard" id="dashboard">
+        <div class="header">
+            <h1>📚 Summer Curriculum Planning</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="course-grid">
+            <!-- Foundations Art Course -->
+            <div class="course-card">
+                <div class="course-header foundations">
+                    <h2>🎭 Foundations Art</h2>
+                    <p>Grade 10 - Visual Art Fundamentals</p>
+                    <div class="course-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="foundations-progress"></div>
+                        </div>
+                        <span class="progress-text" id="foundations-text">0%</span>
+                    </div>
+                </div>
+                <div class="units-container">
+                    <div class="unit" data-course="foundations" data-unit="1">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 1: Elements of Art & Identity</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+                    
+                    <div class="unit" data-course="foundations" data-unit="2">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 2: Human Form & Representation</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="foundations" data-unit="3">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 3: Color Theory and Emphasis</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="foundations" data-unit="4">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 4: Cultural Heritage & Design</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="foundations" data-unit="5">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 5: Process & Authenticity</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="foundations" data-unit="6">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 6: Innovation & Experimentation</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="foundations" data-unit="7">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 7: Synthesis & Presentation</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Studio Art Course -->
+            <div class="course-card">
+                <div class="course-header studio">
+                    <h2>🎨 Studio Art</h2>
+                    <p>Grade 11 - Advanced Techniques</p>
+                    <div class="course-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="studio-progress"></div>
+                        </div>
+                        <span class="progress-text" id="studio-text">0%</span>
+                    </div>
+                </div>
+                <div class="units-container">
+                    <div class="unit" data-course="studio" data-unit="1">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 1: Rebel Against Something</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="studio" data-unit="2">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 2: Human Form & Surrealism</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="studio" data-unit="3">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 3: Transformation & Abstraction</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="studio" data-unit="4">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 4: Cultural Heritage & Design in 3D</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="studio" data-unit="5">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 5: Process & Authenticity</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="studio" data-unit="6">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 6: Innovation & Experimentation</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="studio" data-unit="7">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 7: Synthesis & Presentation</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Digital Art Course -->
+            <div class="course-card">
+                <div class="course-header digital">
+                    <h2>💻 Digital Art & New Media</h2>
+                    <p>Grade 11 - Digital Innovation</p>
+                    <div class="course-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="digital-progress"></div>
+                        </div>
+                        <span class="progress-text" id="digital-text">0%</span>
+                    </div>
+                </div>
+                <div class="units-container">
+                    <div class="unit" data-course="digital" data-unit="1">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 1: Foundations and Digital Identity</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="digital" data-unit="2">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 2: Digital Photography & Portfolio Setup</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="digital" data-unit="3">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 3: Color Theory + Character Design</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="digital" data-unit="4">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 4: Cultural Heritage & Design</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="digital" data-unit="5">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 5: Process & Authenticity</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="digital" data-unit="6">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 6: Animation</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="unit" data-course="digital" data-unit="7">
+                        <div class="unit-header" onclick="toggleUnit(this)">
+                            <h3>Unit 7: Digital Environments & Web Design</h3>
+                            <span class="unit-toggle">▼</span>
+                        </div>
+                        <div class="unit-content">
+                            <div class="task-input-container">
+                                <input type="text" class="task-input" placeholder="Add a planning task...">
+                                <button class="add-task-btn" onclick="addTask(this)">Add Task</button>
+                            </div>
+                            <ul class="task-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password for accessing the dashboard
+        const DASHBOARD_PASSWORD = '0621';
+        
+        // Task management system
+        let tasks = JSON.parse(localStorage.getItem('curriculumTasks')) || {};
+
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (password === DASHBOARD_PASSWORD) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadTasks();
+                updateAllProgress();
+            } else {
+                errorDiv.textContent = 'Incorrect password. Please try again.';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        // Logout functionality
+        function logout() {
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        // Unit toggle functionality
+        function toggleUnit(header) {
+            const unit = header.parentElement;
+            unit.classList.toggle('expanded');
+        }
+
+        // Task management functions
+        function addTask(button) {
+            const container = button.parentElement;
+            const input = container.querySelector('.task-input');
+            const taskText = input.value.trim();
+            
+            if (taskText === '') return;
+            
+            const unit = container.closest('.unit');
+            const course = unit.dataset.course;
+            const unitNum = unit.dataset.unit;
+            const taskList = unit.querySelector('.task-list');
+            
+            // Initialize task structure if needed
+            if (!tasks[course]) tasks[course] = {};
+            if (!tasks[course][unitNum]) tasks[course][unitNum] = [];
+            
+            // Create task object
+            const taskId = Date.now().toString();
+            const task = {
+                id: taskId,
+                text: taskText,
+                completed: false
+            };
+            
+            // Add to tasks array
+            tasks[course][unitNum].push(task);
+            
+            // Create task element
+            createTaskElement(taskList, task, course, unitNum);
+            
+            // Clear input
+            input.value = '';
+            
+            // Save and update progress
+            saveTasks();
+            updateCourseProgress(course);
+        }
+
+        function createTaskElement(taskList, task, course, unitNum) {
+            const li = document.createElement('li');
+            li.className = `task-item ${task.completed ? 'completed' : ''}`;
+            li.innerHTML = `
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                       onchange="toggleTask('${course}', '${unitNum}', '${task.id}')">
+                <span class="task-text">${task.text}</span>
+                <button class="delete-task-btn" onclick="deleteTask('${course}', '${unitNum}', '${task.id}')">Delete</button>
+            `;
+            taskList.appendChild(li);
+        }
+
+        function toggleTask(course, unitNum, taskId) {
+            const task = tasks[course][unitNum].find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                loadTasks();
+                updateCourseProgress(course);
+            }
+        }
+
+        function deleteTask(course, unitNum, taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                tasks[course][unitNum] = tasks[course][unitNum].filter(t => t.id !== taskId);
+                saveTasks();
+                loadTasks();
+                updateCourseProgress(course);
